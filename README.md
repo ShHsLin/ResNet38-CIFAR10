@@ -11,10 +11,11 @@ Global-avg-pool -> Fully connected -> Softmax
 
 ## Results
 
-- Best accuracy so far: 89.38%
+- Best accuracy so far: ???
 - Data set: 50000 training image. 10000 test images(not used for training).
 - Data augmentation: Per image standardization. Per image pad to 36x36, then randomly crop to 32x32. Randomly shuffle all images per epoch. Flip all images per epoch.
-- Training: Train 150 epochs. Batch 128. Adam optimizer(with default hyperparameters). L2 weight decay 0.0002
+- Training: Train ??? epochs. Batch 128. L2 weight decay 0.0002
+- Optimizer: Momentum 0.9; learning rate: 0.1(0-100 epoch), 0.01(100-150 epoch), 0.001(150-210 epoch)
 - Device: GTX TITAN (Pascal) 12GB
 
 ## Acknowledge
