@@ -16,6 +16,12 @@ class ResNet38:
         self._weight_dict = dt.load_weight(weight_path)
         self._var_dict = {}
         self._num_classes = 10
+        self._learningrate = 0.1
+        self._momentum = 0.9
+
+    def set_learningrate(self, learning_rate):
+
+        self._learningrate = learning_rate
 
     def _build_model(self, image, is_train=False):
         '''If is_train, save weight to self._var_dict,
@@ -177,7 +183,7 @@ class ResNet38:
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         with tf.control_dependencies(update_ops):
             # default learning rate for Adam: 0.001
-            train_op = tf.train.AdamOptimizer().minimize(total_loss)
+            train_op = tf.train.MomentumOptimizer(self._learningrate, self._momentum).minimize(total_loss)
 
         return train_op, total_loss, train_acc, correct_preds
 
