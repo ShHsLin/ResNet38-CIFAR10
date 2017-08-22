@@ -34,7 +34,7 @@ class ResNet38:
             dropout = False
 
         shape_dict = {}
-        shape_dict['B0'] = [3,3,3,64]
+        shape_dict['B0'] = [3,3,3,8]
 
         # B0: [H,W,3] -> [H,W,64]
         with tf.variable_scope('B0'):
@@ -43,8 +43,8 @@ class ResNet38:
 
         # B2_1: [H,W,64] -> [H/2, W/2, 128]
         shape_dict['B2'] = {}
-        shape_dict['B2']['side'] = [1,1,64,128]
-        shape_dict['B2']['convs'] = [[3,3,64,128],[3,3,128,128]]
+        shape_dict['B2']['side'] = [1,1,8,16]
+        shape_dict['B2']['convs'] = [[3,3,16,32],[3,3,32,32]]
         with tf.variable_scope('B2_1'):
             model['B2_1'] = nn.ResUnit_downsample_2convs(model['B0'],
                                                          feed_dict,
@@ -59,8 +59,8 @@ class ResNet38:
 
         # B3_1: [H/2, W/2, 128] -> [H/4, W/4, 256]
         shape_dict['B3'] = {}
-        shape_dict['B3']['side'] = [1,1,128,256]
-        shape_dict['B3']['convs'] = [[3,3,128,256],[3,3,256,256]]
+        shape_dict['B3']['side'] = [1,1,32,64]
+        shape_dict['B3']['convs'] = [[3,3,32,64],[3,3,64,64]]
         with tf.variable_scope('B3_1'):
             model['B3_1'] = nn.ResUnit_downsample_2convs(model['B2_3'],
                                                          feed_dict,
@@ -74,8 +74,8 @@ class ResNet38:
                                                           var_dict=var_dict)
         # B4_1: [H/4, W/4, 256] -> [H/8, W/8, 512]
         shape_dict['B4'] = {}
-        shape_dict['B4']['side'] = [1,1,256,512]
-        shape_dict['B4']['convs'] = [[3,3,256,512],[3,3,512,512]]
+        shape_dict['B4']['side'] = [1,1,64,128]
+        shape_dict['B4']['convs'] = [[3,3,64,128],[3,3,128,128]]
         with tf.variable_scope('B4_1'):
             model['B4_1'] = nn.ResUnit_downsample_2convs(model['B3_3'],
                                                              feed_dict,
@@ -90,8 +90,8 @@ class ResNet38:
                                                                var_dict=var_dict)
         # B5_1: [H/8, W/8, 512] -> [H/8, W/8, 1024]
         shape_dict['B5_1'] = {}
-        shape_dict['B5_1']['side'] = [1,1,512,1024]
-        shape_dict['B5_1']['convs'] = [[3,3,512,512],[3,3,512,1024]]
+        shape_dict['B5_1']['side'] = [1,1,128,256]
+        shape_dict['B5_1']['convs'] = [[3,3,128,128],[3,3,128,256]]
         with tf.variable_scope('B5_1'):
             model['B5_1'] = nn.ResUnit_hybrid_dilate_2conv(model['B4_6'],
                                                                feed_dict,
@@ -99,7 +99,7 @@ class ResNet38:
                                                                var_dict=var_dict)
         # B5_2, B5_3: [H/8, W/8, 1024]
         # Shape for B5_2, B5_3
-        shape_dict['B5_2_3'] = [[3,3,1024,512],[3,3,512,1024]]
+        shape_dict['B5_2_3'] = [[3,3,256,128],[3,3,128,256]]
         for i in range(2):
             with tf.variable_scope('B5_'+str(i+2)):
                 model['B5_'+str(i+2)] = nn.ResUnit_full_dilate_2convs(model['B5_'+str(i+1)],
@@ -107,7 +107,7 @@ class ResNet38:
                                                   var_dict=var_dict)
 
         # B6: [H/8, W/8, 1024] -> [H/8, W/8, 2048]
-        shape_dict['B6'] = [[1,1,1024,512],[3,3,512,1024],[1,1,1024,2048]]
+        shape_dict['B6'] = [[1,1,256,128],[3,3,128,256],[1,1,256,256]]
         with tf.variable_scope('B6'):
             model['B6'] = nn.ResUnit_hybrid_dilate_3conv(model['B5_3'],
                                                              feed_dict,
@@ -115,7 +115,7 @@ class ResNet38:
                                                              dropout=dropout,
                                                              var_dict=var_dict)
         # B7: [H/8, W/8, 2048] -> [H/8, W/8, 4096]
-        shape_dict['B7'] = [[1,1,2048,1024],[3,3,1024,2048],[1,1,2048,4096]]
+        shape_dict['B7'] = [[1,1,256,256],[3,3,256,256],[1,1,256,256]]
         with tf.variable_scope('B7'):
             model['B7'] = nn.ResUnit_hybrid_dilate_3conv(model['B6'],
                                                              feed_dict,
@@ -124,7 +124,7 @@ class ResNet38:
                                                              var_dict=var_dict)
 
         # ResNet tail. No conv, only batch_norm + activation
-        shape_dict['Tail'] = 4096
+        shape_dict['Tail'] = 256
         with tf.variable_scope('Tail'):
             model['Tail'] = nn.ResUnit_tail(model['B7'], feed_dict,
                                             shape_dict['Tail'], var_dict)
