@@ -25,10 +25,10 @@ params = {'batch_size': 128,
 
 train_ep = 311
 # val_step_iter = 100
-save_ep = 30
+save_ep = 10
 
-with tf.Session() as sess:
-#with tf.Session(config=config_gpu) as sess:
+#with tf.Session() as sess:
+with tf.Session(config=config_gpu) as sess:
     res38 = resnet38.ResNet38(params['feed_path'])
     save_path = params['save_path']
     batch_size = params['batch_size']
