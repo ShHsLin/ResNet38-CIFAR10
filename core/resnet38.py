@@ -16,6 +16,7 @@ class ResNet38:
         self._weight_dict = dt.load_weight(weight_path)
         self._var_dict = {}
         self._num_classes = 10
+        self._num_params = np.int32(0)
 
     def _build_model(self, image, is_train=False):
         '''If is_train, save weight to self._var_dict,
@@ -33,8 +34,12 @@ class ResNet38:
         else:
             dropout = False
 
+        # Do not use dropout
+        dropout=False
+
         shape_dict = {}
-        shape_dict['B0'] = [3,3,3,8]
+        shape_dict['B0'] = [3,3,3,16]
+        self._num_parasm += np.prod(shape_dict['B0'])
 
         # B0: [H,W,3] -> [H,W,64]
         with tf.variable_scope('B0'):
@@ -43,8 +48,11 @@ class ResNet38:
 
         # B2_1: [H,W,64] -> [H/2, W/2, 128]
         shape_dict['B2'] = {}
-        shape_dict['B2']['side'] = [1,1,8,16]
+        shape_dict['B2']['side'] = [1,1,16,32]
         shape_dict['B2']['convs'] = [[3,3,16,32],[3,3,32,32]]
+        self._num_params += np.prod(shape_dict['B2']['side'])
+        self._num_params += np.prod(shape_dict['B2']['convs'][0])
+        self._num_params += np.prod(shape_dict['B2']['convs'][1]) * 5
         with tf.variable_scope('B2_1'):
             model['B2_1'] = nn.ResUnit_downsample_2convs(model['B0'],
                                                          feed_dict,
@@ -61,6 +69,9 @@ class ResNet38:
         shape_dict['B3'] = {}
         shape_dict['B3']['side'] = [1,1,32,64]
         shape_dict['B3']['convs'] = [[3,3,32,64],[3,3,64,64]]
+        self._num_params += np.prod(shape_dict['B3']['side'])
+        self._num_params += np.prod(shape_dict['B3']['convs'][0])
+        self._num_params += np.prod(shape_dict['B3']['convs'][1]) *5
         with tf.variable_scope('B3_1'):
             model['B3_1'] = nn.ResUnit_downsample_2convs(model['B2_3'],
                                                          feed_dict,
@@ -76,6 +87,9 @@ class ResNet38:
         shape_dict['B4'] = {}
         shape_dict['B4']['side'] = [1,1,64,128]
         shape_dict['B4']['convs'] = [[3,3,64,128],[3,3,128,128]]
+        self._num_params += np.prod(shape_dict['B4']['side'])
+        self._num_params += np.prod(shape_dict['B4']['convs'][0])
+        self._num_params += np.prod(shape_dict['B4']['convs'][1]) * 11
         with tf.variable_scope('B4_1'):
             model['B4_1'] = nn.ResUnit_downsample_2convs(model['B3_3'],
                                                              feed_dict,
@@ -92,6 +106,9 @@ class ResNet38:
         shape_dict['B5_1'] = {}
         shape_dict['B5_1']['side'] = [1,1,128,256]
         shape_dict['B5_1']['convs'] = [[3,3,128,128],[3,3,128,256]]
+        self._num_params += np.prod(shape_dict['B5_1']['side'])
+        self._num_params += np.prod(shape_dict['B5_1']['convs'][0])
+        self._num_params += np.prod(shape_dict['B5_1']['convs'][1]) * 5
         with tf.variable_scope('B5_1'):
             model['B5_1'] = nn.ResUnit_hybrid_dilate_2conv(model['B4_6'],
                                                                feed_dict,
@@ -108,6 +125,9 @@ class ResNet38:
 
         # B6: [H/8, W/8, 1024] -> [H/8, W/8, 2048]
         shape_dict['B6'] = [[1,1,256,128],[3,3,128,256],[1,1,256,256]]
+        self._num_params += np.prod(shape_dict['B6'][0])
+        self._num_params += np.prod(shape_dict['B6'][1])
+        self._num_params += np.prod(shape_dict['B6'][2])
         with tf.variable_scope('B6'):
             model['B6'] = nn.ResUnit_hybrid_dilate_3conv(model['B5_3'],
                                                              feed_dict,
@@ -116,6 +136,9 @@ class ResNet38:
                                                              var_dict=var_dict)
         # B7: [H/8, W/8, 2048] -> [H/8, W/8, 4096]
         shape_dict['B7'] = [[1,1,256,256],[3,3,256,256],[1,1,256,256]]
+        self._num_params += np.prod(shape_dict['B7'][0])
+        self._num_params += np.prod(shape_dict['B7'][1])
+        self._num_params += np.prod(shape_dict['B7'][2])
         with tf.variable_scope('B7'):
             model['B7'] = nn.ResUnit_hybrid_dilate_3conv(model['B6'],
                                                              feed_dict,
@@ -134,6 +157,7 @@ class ResNet38:
             model['pool_out'] = nn.Global_avg_pool(model['Tail'])
 
         # Fully connected: [4096] -> [10]
+        self._num_params += 256 * 10
         with tf.variable_scope('FC'):
             batch_size = tf.shape(model['pool_out'])[0]
             model['fc_out'] = nn.FC(model['pool_out'], batch_size, feed_dict,
@@ -167,6 +191,7 @@ class ResNet38:
         # randomly flipping end
 
         model = self._build_model(flipped_img, is_train=True)
+        print('Model build completed. Number of parameters: {0}'.format(model._num_params))
         prediction = model['fc_out']
         label = tf.reshape(label, [params['batch_size']])
 

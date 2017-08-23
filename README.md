@@ -4,7 +4,7 @@
 
 Implement Model A in paper [Wider or Deeper: Revisiting the ResNet Model for Visual Recognition](https://arxiv.org/abs/1611.10080).
 Use convolution with stride=2 as downsampling operation instead of max pooling. Only downsample 3 times, then use dilated convolutions.
-Use dropout on wide layers ??? and ???, however this is not specified in original paper.
+No dropout.
 
 Model A structure: Input(32x32) -> B0 -> B2(x3, downsample once) -> B3 (x3, downsampled once) -> B4(x6, downsampled once) -> B5(x3, dilated) -> B6(x1, dilated) -> B7(x1, dilated) -> 
 Global-avg-pool -> Fully connected -> Softmax
